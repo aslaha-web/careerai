@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+/* next-themes toggles the `dark` class on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------
+   Design tokens. Every colour in the app comes from these variables,
+   so light/dark parity lives in exactly one place.
+------------------------------------------------------------------- */
+:root {
+  --background: #f5f6fa;
+  --foreground: #0d1226;
+  --card: #ffffff;
+  --card-foreground: #0d1226;
+  --muted: #eceef5;
+  --muted-foreground: #5b6280;
+  --border: #e1e4ee;
+  --ring: #5b7cff;
+
+  --sidebar: #ffffff;
+  --sidebar-border: #e1e4ee;
+  --sidebar-active: #edf1ff;
+  --sidebar-active-foreground: #2457e6;
+
+  --primary: #2f6bff;
+  --primary-foreground: #ffffff;
+  --accent: #7c5cff;
+  --accent-foreground: #ffffff;
+
+  --success: #12a05c;
+  --warning: #c98200;
+  --danger: #d6384a;
+
+  --banner-from: #2f6bff;
+  --banner-to: #3b4dff;
+
+  --shadow-card: 0 1px 2px rgb(13 18 38 / 0.04), 0 4px 16px rgb(13 18 38 / 0.05);
+}
+
+.dark {
+  --background: #05070d;
+  --foreground: #eef1fb;
+  --card: #0b0f1a;
+  --card-foreground: #eef1fb;
+  --muted: #121829;
+  --muted-foreground: #8e97b5;
+  --border: #1a2136;
+  --ring: #6d8dff;
+
+  --sidebar: #0a1226;
+  --sidebar-border: #141c33;
+  --sidebar-active: #13244a;
+  --sidebar-active-foreground: #7fa2ff;
+
+  --primary: #3b78ff;
+  --primary-foreground: #ffffff;
+  --accent: #8b6cff;
+  --accent-foreground: #ffffff;
+
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87185;
+
+  --banner-from: #2563eb;
+  --banner-to: #3b5bff;
+
+  --shadow-card: 0 0 0 1px rgb(255 255 255 / 0.01), 0 8px 24px rgb(0 0 0 / 0.35);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-active: var(--sidebar-active);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-banner-from: var(--banner-from);
+  --color-banner-to: var(--banner-to);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-card: 1rem;
+  --shadow-card: var(--shadow-card);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  /* Smooth theme change only for properties that matter; skipped for reduced motion */
+  @media (prefers-reduced-motion: no-preference) {
+    body,
+    aside,
+    header,
+    main {
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+  }
+}
+
+/* Single orchestrated entrance: the score ring draws itself once on load */
+@keyframes ring-draw {
+  from {
+    stroke-dashoffset: var(--ring-circumference);
+  }
+}
+.ring-animate {
+  animation: ring-draw 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ring-animate {
+    animation: none;
+  }
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
