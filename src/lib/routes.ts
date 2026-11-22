@@ -1,12 +1,13 @@
 /**
  * Paths that anyone may open. Everything else requires a session, so a new
  * route is protected by default and must be listed here on purpose to be public.
- * Step 3 will add the landing/about/features/contact pages to this list.
+ * Marketing pages (Step 3) and the auth pages are public; everything else is private.
  */
-export const PUBLIC_PATHS = ["/", "/login", "/register"];
+export const PUBLIC_PATHS = ["/", "/features", "/about", "/contact", "/login", "/register"];
 
 export function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(pathname);
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname; // "/about/" is the same page as "/about"
+  return PUBLIC_PATHS.includes(path);
 }
 
 /**

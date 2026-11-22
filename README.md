@@ -5,8 +5,9 @@ AI-powered career assistant (portfolio project).
 | Step | Status |
 |------|--------|
 | 1. Design system, theme, sidebar, dashboard shell | Done |
-| 2. PostgreSQL + authentication | **Done (this version)** |
-| 3+. Public pages, resume analyzer, AI features | Not started |
+| 2. PostgreSQL + authentication (hardened) | Done |
+| 3. Public pages: home, features, about, contact | **Done (this version)** |
+| 4+. Resume analyzer and the AI features | Not started |
 
 The dashboard still shows **sample statistics** (labelled on screen); they are replaced
 with real per-user queries in a later step. Everything about the signed-in user is real.
@@ -72,6 +73,51 @@ layer, child tables (analyses, questions, answers, roadmap tasks) reference thei
 with a composite foreign key `(parent_id, user_id)`, so PostgreSQL itself rejects a row that
 points at another user's data.
 
+## Public pages (Step 3)
+
+| Page | Path | Notes |
+|---|---|---|
+| Home | `/` | Landing page. Signed-in visitors see "Dashboard" instead of "Log in". `/` no longer redirects. |
+| Features | `/features` | One section per feature, with labelled example illustrations. |
+| About | `/about` | Who it is for, principles, stack. |
+| Contact | `/contact` | See below. |
+
+**Public by list.** These paths are in `PUBLIC_PATHS` in `src/lib/routes.ts`; everything else still requires a session.
+A test checks that every page folder under `src/app/(public)` and `src/app/(auth)` is listed there, and that every
+signed-in page is not, so a forgotten entry fails `npm test` instead of silently redirecting visitors to the login page.
+
+**Contact form.** There is deliberately no mail server or database behind it (a table would change the schema, and an email
+service would be a new dependency to run and keep free). Instead, the form validates the message and opens the visitor's
+own email app with it pre-filled (`mailto:`). Set the destination in `.env`:
+
+```bash
+CONTACT_EMAIL=you@example.com
+```
+
+Without it, the page shows a neutral notice (and a setup hint in development) instead of a form. Visitors without a
+configured email app can copy the address with the "Copy address" button. If you later want real submissions stored or
+emailed, that needs a new table or a provider (check its current free-tier limits first); it is not part of this step.
+
+**Feature status.** `src/config/features.ts` is the single source for the feature copy. Every feature is currently
+`"coming-soon"`, which shows a "Coming soon" badge on the home and features pages. When a feature ships, set its
+`status` to `"available"` and the badge disappears everywhere. (`tests/public.test.ts` asserts the current statuses, so
+update that expectation in the same change.)
+
+**Illustrations** on these pages are built from the app's own components (score ring, progress bars, tags) and are
+labelled "Example, not real data". No stock photos or external images are used.
+
+**Colours.** The public pages use a small set of additional tokens in `globals.css` (`--cta`, `--brand-text`,
+`--accent-text`, `--success-text`, `--warning-text`) so text and buttons meet WCAG AA contrast (4.5:1) in both themes.
+They are additive: no existing token was changed.
+
+## Known accessibility gap in the Step 1 and 2 colours
+
+An automated check (axe-core) passes on all four public pages in both themes, on desktop and mobile. It still reports
+colour-contrast failures on `/login` and `/register`, which come from the shared Step 1 tokens and were left alone on purpose:
+white text on the dark-mode primary button is 3.94:1, the light-mode primary blue is 4.49:1 on white (4.16:1 on the page
+background) and its tinted badges are lower, and the light-mode warning badge is 2.68:1. The same tokens appear in the
+dashboard. A fix is a small shade adjustment to those tokens, or using the new `--cta` / `--brand-text` tokens there.
+
 ## Deploying behind a proxy (client IP and `TRUST_PROXY`)
 
 Throttling needs the visitor's IP address, and the only place a web app can read it is
@@ -119,15 +165,16 @@ Source of truth: `src/db/schema.ts`. Generated SQL: `drizzle/`. AI-produced rows
 
 ## Tests
 
-`npm test` runs 48 tests: 34 in `tests/auth-db.test.ts`, mostly integration tests against the database in
-`DATABASE_URL` (hashing, user creation, sessions, atomic rate limiting under a parallel burst, ownership
-constraints on saved jobs and recommendation skills, cross-user isolation, constraints, cascades, validation,
-redirect safety), and 14 pure unit tests for client-IP resolution in `tests/client-ip.test.ts`. Database tests assert exact PostgreSQL error codes and constraint names. Tests create throwaway users (`test-...@example.test`) and
+`npm test` runs 65 tests:
+
+- `tests/auth-db.test.ts` (34): mostly integration tests against the database in `DATABASE_URL` (hashing, user creation, sessions, atomic rate limiting under a parallel burst, ownership constraints, cross-user isolation, constraints, cascades, validation, redirect safety).
+- `tests/client-ip.test.ts` (14): pure unit tests for client-IP resolution.
+- `tests/public.test.ts` (17): pure unit tests for the public pages (which routes are public, honesty caveats in the feature copy, contact form validation and mailto injection safety). Database tests assert exact PostgreSQL error codes and constraint names. Tests create throwaway users (`test-...@example.test`) and
 delete them afterwards, but **point `DATABASE_URL` at a development database, never production.**
 
 ## Environment variables
 
-See `.env.example`. `DATABASE_URL` is the only required one. It is read only on the server.
+See `.env.example`. `DATABASE_URL` is the only required one, and it is read only on the server. `CONTACT_EMAIL` is optional and is shown on the public contact page by design (it is the address visitors write to).
 `ALLOW_INSECURE_COOKIES=true` is for running `npm run build && npm start` over plain
 `http://localhost`; never set it on a real deployment.
 
@@ -142,13 +189,14 @@ See `.env.example`. `DATABASE_URL` is the only required one. It is read only on 
 
 ```
 src/
+  app/(public)/      home, features, about, contact
   app/(auth)/        login, register
   app/(app)/         signed-in pages (guarded by requireUser)
   db/                schema.ts, client
   server/auth/       passwords, sessions, rate limit, actions, dal
   server/data/       user-scoped queries
   lib/               utils, routes, validation
-  components/        ui, layout, auth, dashboard
+  components/        ui, layout, auth, dashboard, marketing
 drizzle/             generated SQL migrations
 scripts/migrate.ts   migration runner
 tests/               integration tests
